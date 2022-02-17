@@ -22,7 +22,6 @@ java_library(
         "//org/brotli/common:shared_dictionary",
         "//org/brotli/enc:prepared_dictionary",
     ],
-    resource_jars = ["//:license"],
 )
 
 java_library(

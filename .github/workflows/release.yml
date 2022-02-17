@@ -1,0 +1,37 @@
+name: Release
+on:
+  release:
+    types:
+      - created
+permissions:
+  contents: write
+jobs:
+  build:
+    name: Upload Release Assets
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macOS-latest ]
+        include:
+          - os: ubuntu-latest
+            name: linux
+          - os: macOS-latest
+            name: macos
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        run: bazel build -c opt //org/brotli/wrapper:all
+        working-directory: ./java
+      - name: Copy Outputs
+        run: |
+          mv ./java/bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ./brotli.jar
+          mv ./java/bazel-bin/org/brotli/wrapper/native.jar ./brotli-native-${{ matrix.name }}.jar
+      - name: Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files:
+            - brotli.jar
+            - brotli-native-${{ matrix.name }}.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
