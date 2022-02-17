@@ -30,8 +30,8 @@ jobs:
       - name: Upload Assets
         uses: softprops/action-gh-release@v1
         with:
-          files:
-            - brotli.jar
-            - brotli-native-${{ matrix.name }}.jar
+          files: |
+            brotli.jar
+            brotli-native-${{ matrix.name }}.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
