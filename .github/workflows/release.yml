@@ -21,12 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
-        run: bazel build -c opt //org/brotli/wrapper:all
-        working-directory: ./java
-      - name: Copy Outputs
         run: |
-          mv ./java/bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ./brotli.jar
-          mv ./java/bazel-bin/org/brotli/wrapper/native.jar ./brotli-native-${{ matrix.name }}.jar
+          bazel build -c opt //org/brotli/wrapper:all
+          mv ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../brotli.jar
+          mv ./bazel-bin/org/brotli/wrapper/native.jar ../brotli-native-${{ matrix.name }}.jar
+        working-directory: ./java
       - name: Upload Assets
         uses: softprops/action-gh-release@v1
         with:
