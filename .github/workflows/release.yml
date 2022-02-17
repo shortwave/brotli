@@ -22,7 +22,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Build
         run: |
-          bazel build -c opt //org/brotli/wrapper:all
+          bazel build -c opt //org/brotli/wrapper:wrapper_deploy.jar
+          bazel build -c opt //org/brotli/wrapper:native
           mv ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../brotli.jar
           mv ./bazel-bin/org/brotli/wrapper/native.jar ../brotli-native-${{ matrix.name }}.jar
         working-directory: ./java
