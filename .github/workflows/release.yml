@@ -13,17 +13,22 @@ jobs:
         os: [ ubuntu-latest, macOS-latest ]
         include:
           - os: ubuntu-latest
-            name: linux
+            name: linux_x64
+            cpu: linux_x86_64
           - os: macOS-latest
-            name: macos
+            name: macos_x64
+            cpu: darwin_x86_64
+          - os: macOS-latest
+            name: macos_arm64
+            cpu: darwin_arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
         run: |
-          bazel build -c opt //org/brotli/wrapper:wrapper_deploy.jar
-          bazel build -c opt //org/brotli/wrapper:native
+          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:wrapper_deploy.jar
+          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:native
           mv ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../brotli.jar
           mv ./bazel-bin/org/brotli/wrapper/native.jar ../brotli-native-${{ matrix.name }}.jar
         working-directory: ./java
