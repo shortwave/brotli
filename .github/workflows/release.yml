@@ -10,7 +10,7 @@ jobs:
     name: Upload Release Assets
     strategy:
       matrix:
-        os: [ ubuntu-latest, macOS-latest ]
+        name: [ linux_x64, macos_x64, macos_arm64 ]
         include:
           - os: ubuntu-latest
             name: linux_x64
