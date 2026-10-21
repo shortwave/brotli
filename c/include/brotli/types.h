@@ -12,7 +12,7 @@
 #ifndef BROTLI_COMMON_TYPES_H_
 #define BROTLI_COMMON_TYPES_H_
 
-#include <stddef.h>  /* for size_t */
+#include <stddef.h>  /* IWYU pragma: export */
 
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 typedef __int8 int8_t;
@@ -24,7 +24,7 @@ typedef unsigned __int32 uint32_t;
 typedef unsigned __int64 uint64_t;
 typedef __int64 int64_t;
 #else
-#include <stdint.h>
+#include <stdint.h>  /* IWYU pragma: export */
 #endif  /* defined(_MSC_VER) && (_MSC_VER < 1600) */
 
 /**
@@ -41,7 +41,7 @@ typedef __int64 int64_t;
  * evaluated, for example: @code{.cpp}
  * if (SomeBrotliFunction(encoder, BROTLI_TRUE) &&
  *     !OtherBrotliFunction(decoder, BROTLI_FALSE)) {
- *   bool x = !!YetAnotherBrotliFunction(encoder, TO_BROLTI_BOOL(2 * 2 == 4));
+ *   bool x = !!YetAnotherBrotliFunction(encoder, TO_BROTLI_BOOL(2 * 2 == 4));
  *   DoSomething(x);
  * }
  * @endcode

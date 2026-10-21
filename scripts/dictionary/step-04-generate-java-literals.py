@@ -15,11 +15,6 @@
 #
 # This script generates literals used in Java code.
 
-try:
-  unichr  # Python 2
-except NameError:
-  unichr = chr  # Python 3
-
 bin_path = "dictionary.bin"
 
 with open(bin_path, "rb") as raw:
@@ -38,16 +33,15 @@ for b in data:
       cntr += 1
     else:
       is_skip = False
-      hi.append(unichr(cntr))
+      hi.append(chr(cntr))
       cntr = skip_flip_offset + 1
+  elif value >= 0x80:
+    cntr += 1
   else:
-    if value >= 0x80:
-      cntr += 1
-    else:
-      is_skip = True
-      hi.append(unichr(cntr))
-      cntr = skip_flip_offset + 1
-hi.append(unichr(cntr))
+    is_skip = True
+    hi.append(chr(cntr))
+    cntr = skip_flip_offset + 1
+hi.append(chr(cntr))
 
 low0 = low[0:len(low) // 2]
 low1 = low[len(low) // 2:len(low)]
@@ -56,18 +50,18 @@ low1 = low[len(low) // 2:len(low)]
 def escape(chars):
   result = []
   for c in chars:
-    if "\r" == c:
+    if c == "\r":
       result.append("\\r")
-    elif "\n" == c:
+    elif c == "\n":
       result.append("\\n")
-    elif "\t" == c:
+    elif c == "\t":
       result.append("\\t")
-    elif "\"" == c:
+    elif c == "\"":
       result.append("\\\"")
-    elif "\\" == c:
+    elif c == "\\":
       result.append("\\\\")
     elif ord(c) < 32 or ord(c) >= 127:
-      result.append("\\u%04X" % ord(c))
+      result.append(f"\\u{ord(c):04X}")
     else:
       result.append(c)
   return result

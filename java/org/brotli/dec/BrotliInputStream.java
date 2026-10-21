@@ -16,7 +16,16 @@ import java.io.InputStream;
  */
 public class BrotliInputStream extends InputStream {
 
+  /** Default size of internal buffer (used for faster byte-by-byte reading). */
   public static final int DEFAULT_INTERNAL_BUFFER_SIZE = 256;
+
+  /**
+   * Value expected by InputStream contract when stream is over.
+   *
+   * In Java it is -1.
+   * In C# it is 0 (should be patched during transpilation).
+   */
+  private static final int END_OF_STREAM_MARKER = -1;
 
   /**
    * Internal buffer used for efficient byte-by-byte reading.
@@ -78,20 +87,24 @@ public class BrotliInputStream extends InputStream {
     this.remainingBufferBytes = 0;
     this.bufferOffset = 0;
     try {
-      Decode.initState(state, source);
+      state.input = source;
+      Decode.initState(state);
     } catch (BrotliRuntimeException ex) {
       throw new IOException("Brotli decoder initialization failed", ex);
     }
   }
 
+  /** Attach "RAW" dictionary (chunk) to decoder. */
   public void attachDictionaryChunk(byte[] data) {
     Decode.attachDictionaryChunk(state, data);
   }
 
+  /** Request decoder to produce output as soon as it is available. */
   public void enableEagerOutput() {
     Decode.enableEagerOutput(state);
   }
 
+  /** Enable "large window" stream feature. */
   public void enableLargeWindow() {
     Decode.enableLargeWindow(state);
   }
@@ -102,6 +115,7 @@ public class BrotliInputStream extends InputStream {
   @Override
   public void close() throws IOException {
     Decode.close(state);
+    Utils.closeInput(state);
   }
 
   /**
@@ -112,7 +126,8 @@ public class BrotliInputStream extends InputStream {
     if (bufferOffset >= remainingBufferBytes) {
       remainingBufferBytes = read(buffer, 0, buffer.length);
       bufferOffset = 0;
-      if (remainingBufferBytes == -1) {
+      if (remainingBufferBytes == END_OF_STREAM_MARKER) {
+        // Both Java and C# return the same value for EOF on single-byte read.
         return -1;
       }
     }
@@ -124,6 +139,9 @@ public class BrotliInputStream extends InputStream {
    */
   @Override
   public int read(byte[] destBuffer, int destOffset, int destLen) throws IOException {
+    if (destBuffer == null) {
+      throw new NullPointerException("destBuffer is null");
+    }
     if (destOffset < 0) {
       throw new IllegalArgumentException("Bad offset: " + destOffset);
     } else if (destLen < 0) {
@@ -151,11 +169,10 @@ public class BrotliInputStream extends InputStream {
       state.outputLength = destLen;
       state.outputUsed = 0;
       Decode.decompress(state);
-      if (state.outputUsed == 0) {
-        return -1;
-      }
-      return state.outputUsed + copyLen;
-    } catch (BrotliRuntimeException ex) {
+      copyLen += state.outputUsed;
+      copyLen = (copyLen > 0) ? copyLen : END_OF_STREAM_MARKER;
+      return copyLen;
+    } catch (BrotliRuntimeException | IllegalStateException ex) {
       throw new IOException("Brotli stream decoding failed", ex);
     }
 

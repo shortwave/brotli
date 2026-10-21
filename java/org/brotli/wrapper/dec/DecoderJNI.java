@@ -58,6 +58,9 @@ public class DecoderJNI {
       if (length < 0) {
         throw new IllegalArgumentException("negative block length");
       }
+      if (length > inputBuffer.capacity()) {
+        throw new IllegalArgumentException("block length exceeds input buffer capacity");
+      }
       if (context[0] == 0) {
         throw new IllegalStateException("brotli decoder is already destroyed");
       }
@@ -121,15 +124,6 @@ public class DecoderJNI {
       }
       nativeDestroy(context);
       context[0] = 0;
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-      if (context[0] != 0) {
-        /* TODO(eustas): log resource leak? */
-        destroy();
-      }
-      super.finalize();
     }
   }
 }
