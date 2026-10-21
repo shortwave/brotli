@@ -1,5 +1,11 @@
 name: JNI release
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and upload
+        required: true
+        type: string
   pull_request:
   release:
     types:
@@ -28,6 +34,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.tag || github.ref }}
       - name: Build
         env:
           ARTIFACT_PLATFORM: ${{ matrix.name }}
@@ -38,9 +45,13 @@ jobs:
           mv ./bazel-bin/org/brotli/wrapper/native.jar "../brotli-native-${ARTIFACT_PLATFORM}.jar"
         working-directory: ./java
       - name: Upload Assets
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
           ARTIFACT_PLATFORM: ${{ matrix.name }}
-        run: gh release upload "$RELEASE_TAG" brotli.jar "brotli-native-${ARTIFACT_PLATFORM}.jar"
+        run: |
+          gh release upload "$RELEASE_TAG" "brotli-native-${ARTIFACT_PLATFORM}.jar" --clobber
+          if [ "$ARTIFACT_PLATFORM" = linux_x64 ]; then
+            gh release upload "$RELEASE_TAG" brotli.jar --clobber
+          fi
