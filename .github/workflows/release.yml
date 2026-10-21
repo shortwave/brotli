@@ -1,42 +1,57 @@
-name: Release
+name: JNI release build
 on:
+  pull_request:
   release:
     types:
       - created
 permissions:
-  contents: write
+  contents: read
 jobs:
   build:
-    name: Upload Release Assets
+    name: Build and test ${{ matrix.name }}
     strategy:
+      fail-fast: false
       matrix:
-        name: [ linux_x64, macos_x64, macos_arm64 ]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             name: linux_x64
-            cpu: k8
-          - os: macOS-latest
+          - os: macos-15-intel
             name: macos_x64
-            cpu: darwin_x86_64
-          - os: macOS-latest
+          - os: macos-15
             name: macos_arm64
-            cpu: darwin_arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build
+        uses: actions/checkout@v4
+      - name: Test decoder and compression compatibility
+        run: make -j2 test
+      - name: Build JNI release assets
         run: |
-          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:wrapper_deploy.jar
-          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:native
-          mv ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../brotli.jar
-          mv ./bazel-bin/org/brotli/wrapper/native.jar ../brotli-native-${{ matrix.name }}.jar
+          bazel build --noenable_bzlmod -c opt //org/brotli/wrapper:wrapper_deploy.jar //org/brotli/wrapper:native
+          mkdir -p ../artifacts
+          cp ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../artifacts/brotli.jar
+          cp ./bazel-bin/org/brotli/wrapper/native.jar ../artifacts/brotli-native-${{ matrix.name }}.jar
         working-directory: ./java
-      - name: Upload Assets
-        uses: softprops/action-gh-release@v1
+      - name: Test JNI wrapper
+        run: bazel test --noenable_bzlmod -c opt //org/brotli/wrapper/dec:CornerCasesTest //org/brotli/wrapper/dec:DecoderTest
+        working-directory: ./java
+      - name: Preserve release assets
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            brotli.jar
-            brotli-native-${{ matrix.name }}.jar
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: brotli-${{ matrix.name }}
+          path: artifacts/*.jar
+  publish:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: brotli-*
+          merge-multiple: true
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.jar
