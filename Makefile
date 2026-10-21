@@ -42,7 +42,11 @@ lib: $(LIBOBJECTS)
 	rm -f $(LIB_A)
 	ar -crs $(LIB_A) $(LIBOBJECTS)
 
-test: $(EXECUTABLE)
+$(BINDIR)/block_switch_test: tests/block_switch_test.c $(filter-out c/tools/brotli.c c/dec/decode.c,$(SOURCES)) c/dec/decode.c | $(DIRS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -Ic/include tests/block_switch_test.c $(filter-out c/tools/brotli.c c/dec/decode.c,$(SOURCES)) $(LDFLAGS) -lm -o $@
+
+test: $(EXECUTABLE) $(BINDIR)/block_switch_test
+	$(BROTLI_WRAPPER) $(BINDIR)/block_switch_test
 	tests/compatibility_test.sh $(BROTLI_WRAPPER)
 	tests/roundtrip_test.sh $(BROTLI_WRAPPER)
 
