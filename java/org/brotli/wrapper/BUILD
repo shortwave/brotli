@@ -1,10 +1,11 @@
+load("@rules_java//java:java_binary.bzl", "java_binary")
+
 package(default_visibility = ["//visibility:public"])
 
 java_binary(
   name = "wrapper",
   create_executable = False,
   runtime_deps = [
-    "//:license",
     "//org/brotli/wrapper/enc",
     "//org/brotli/wrapper/dec",
   ],

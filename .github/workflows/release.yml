@@ -10,25 +10,20 @@ jobs:
     name: Upload Release Assets
     strategy:
       matrix:
-        name: [ linux_x64, macos_x64, macos_arm64 ]
+        name: [ linux_x64, macos_arm64 ]
         include:
           - os: ubuntu-latest
             name: linux_x64
-            cpu: k8
-          - os: macOS-latest
-            name: macos_x64
-            cpu: darwin_x86_64
           - os: macOS-latest
             name: macos_arm64
-            cpu: darwin_arm64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Build
         run: |
-          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:wrapper_deploy.jar
-          bazel build -c opt --cpu=${{ matrix.cpu }} //org/brotli/wrapper:native
+          bazelisk build -c opt --java_language_version=17 --java_runtime_version=remotejdk_17 //org/brotli/wrapper:wrapper_deploy.jar
+          bazelisk build -c opt --java_language_version=17 --java_runtime_version=remotejdk_17 //org/brotli/wrapper:native
           mv ./bazel-bin/org/brotli/wrapper/wrapper_deploy.jar ../brotli.jar
           mv ./bazel-bin/org/brotli/wrapper/native.jar ../brotli-native-${{ matrix.name }}.jar
         working-directory: ./java
