@@ -8,11 +8,14 @@ I found the following issues with the Brotli format:
 - The block type code is useless if NBLTYPES==2, you would only need 1 symbol
   anyway, so why don't you just switch to "the other" type?
 """
+# ruff: noqa
 import struct
 from operator import itemgetter, methodcaller
 from itertools import accumulate, repeat
 from collections import defaultdict, deque
 from functools import partial
+
+DICTIONARY_PATH = 'dictionary.bin'
 
 class InvalidStream(Exception): pass
 #lookup table
@@ -517,7 +520,7 @@ class Enumerator(WithExtra):
     extraTable is a class variable that contains
     the extraBits of the symbols from 0
     value0 contains the value of symbol 0
-    encodings is not neccessary, but allowed.
+    encodings is not necessary, but allowed.
     Note: place for FixedCode to make sure extraBits works
     """
     def __init__(self, name=None, **args):
@@ -590,7 +593,7 @@ class PrefixCodeHeader(WithExtra):
                 map(str, lengths[index:index+5]))
             )
 
-class TreeShapeAlhabet(BoolCode):
+class TreeShapeAlphabet(BoolCode):
     """The bit used to indicate if four word code is "deep" or "wide"
     """
     name = 'SHAPE'
@@ -1263,7 +1266,7 @@ class WordList:
              10, 10, 10,  9,  9,  8,  7,  7,  8,  7,
               7,  6,  6,  5,  5]
     def __init__(self):
-        self.file = open('dict', 'rb')
+        self.file = open(DICTIONARY_PATH, 'rb')
         self.compileActions()
 
     def word(self, size, dist):
@@ -1284,8 +1287,9 @@ class WordList:
         return word.encode('utf8')
 
 
-    #Super compact form of action table.
-    #_ means space, .U means UpperCaseAll, U(w) means UpperCaseFirst
+    # Super compact form of action table.
+    # _ means space, .U means UpperCaseAll, U(w) means UpperCaseFirst
+    # typo:off
     actionTable = r"""
         0:w        25:w+_for_     50:w+\n\t       75:w+. This_100:w+ize_
         1:w+_      26:w[3:]       51:w+:          76:w+,      101:w.U+.
@@ -1313,6 +1317,7 @@ class WordList:
        23:w[:-3]   48:w[:-7]                      98:_+w+=\'
        24:w+]      49:w[:-1]+ing_ 74:U(w)+\'      99:U(w)+,
         """
+    # typo:on
 
     def compileActions(self):
         """Build the action table from the text above
@@ -1450,7 +1455,7 @@ class Layout:
             del alphabet.mnemonic
             if numberOfSymbols==4:
                 #read tree shape to redefine lengths
-                lengths = self.verboseRead(TreeShapeAlhabet())
+                lengths = self.verboseRead(TreeShapeAlphabet())
             #construct the alphabet prefix code
             alphabet.setLength(dict(zip(table, lengths)))
         return alphabet
@@ -1720,7 +1725,7 @@ class Layout:
 
     def contextMap(self, kind):
         """Read context maps
-        Returns the number of differnt values on the context map
+        Returns the number of different values on the context map
         (In other words, the number of prefix trees)
         """
         NTREES = self.verboseRead(TypeCountAlphabet(
@@ -2238,7 +2243,7 @@ __test__ = {
 
 'file': """
     >>> try: Layout(BitStream(
-    ... open("H:/Downloads/brotli-master/tests/testdata/10x10y.compressed",'rb')
+    ... open("./tests/testdata/10x10y.compressed",'rb')
     ...     .read())).processStream()
     ... except NotImplementedError: pass
     addr  hex               binary context explanation
@@ -2340,9 +2345,12 @@ __test__ = {
 
 }
 
-if __name__=='__main__':
+if __name__ == '__main__':
+    import os
     import sys
-    if len(sys.argv)>1:
+    here = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
+    DICTIONARY_PATH = os.path.realpath(os.path.join(here, DICTIONARY_PATH))
+    if len(sys.argv) > 1:
         l = Layout(BitStream(open(sys.argv[1],'rb').read()))
         l.processStream()
     else:
